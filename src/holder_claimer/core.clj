@@ -23,20 +23,20 @@
     (catch Exception e
       (error "mail not sent" e))))
 
-(defn lookup-holder [screen-name]
-  (info "lookup screen name" screen-name)
+(defn holder-free [screen-name]
+  (debug "lookup screen name" screen-name)
   (try
     (let [creds (twitter.oauth/make-oauth-creds
                   (env :claimer-consumer-key)
                   (env :claimer-consumer-secret)
                   (env :claimer-access-token)
                   (env :claimer-access-token-secret))]
-      (users-lookup :oauth-creds creds :params {:screen_name screen-name}))
+      (users-lookup :oauth-creds creds :params {:screen_name screen-name})
+      false)
     (catch Exception e
       (if (.contains (.getMessage e) "that page does not exist")
-        (send-mail screen-name)
-        (error (class e) (.getMessage e)))))
-  nil)
+        true
+        (error "Twitter error" e)))))
 
 (defn -main
   "Try to grab that username!"
@@ -44,7 +44,7 @@
   (try
     (let [screen-names (map trim (split (env :claims) #","))]
       (info "trying to claim my precious" screen-names)
-      (doall (map lookup-holder screen-names)))
+      (doall (map send-mail (filter holder-free screen-names))))
     (catch Exception e
       (error e)))
   (System/exit 0))
