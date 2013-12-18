@@ -4,13 +4,13 @@
     [twitter.oauth]
     [environ.core]
     [twitter.api.restful]
-    [clojure.string :only (split)]
+    [clojure.string :only (split trim)]
     [postal.core]
     [taoensso.timbre :as timbre
      :refer (log  debug  info  error)]))
 
 (defn send-mail [screen-name]
-  (debug "sending email for " screen-name)
+  (debug "sending email for" screen-name)
   (try
     (send-message ^{:host "smtp.gmail.com"
                     :user (env :gmail-user)
@@ -24,7 +24,7 @@
       (error "mail not sent" e))))
 
 (defn lookup-holder [screen-name]
-  (info "lookup screen name " screen-name)
+  (info "lookup screen name" screen-name)
   (try
     (let [creds (twitter.oauth/make-oauth-creds
                   (env :claimer-consumer-key)
@@ -42,9 +42,10 @@
   "Try to grab that username!"
   [& args]
   (try
-    (let [screen-names (split (env :claims) #",")]
+    (let [screen-names (map trim (split (env :claims) #","))]
       (info "trying to claim my precious" screen-names)
       (doall (map lookup-holder screen-names)))
     (catch Exception e
-      (error e))))
+      (error e)))
+  (System/exit 0))
 
